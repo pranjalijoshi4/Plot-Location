@@ -1,0 +1,124 @@
+{% extends "findlocation/header.html" %}
+
+{% block content %}
+
+
+</script>
+
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+
+<script type="text/javascript">
+    
+    //ajax call to load page asynchronously
+    
+    $.ajax({
+            url:'127.0.0.1:8000/getlocation',
+            type:'GET',
+            success:function(output) 
+            { 
+                console.log("Success!");console.log(output);
+                console.log(output);
+                
+                var address = "{{success}}"; //address variable holds the value of user input
+                                
+                if(address != "None")
+                {   
+                    dispalyMap(address);    //function call to display address on map                   
+                }
+            },
+           error:function(output) { console.log("Error!"); console.log(output);}
+
+       });
+    
+
+    function dispalyMap(address)
+    {
+        
+        document.getElementById("address").value = address;
+        
+        geocoder = new google.maps.Geocoder(); //geocoder to locate address to map
+         
+        var latlng = new google.maps.LatLng(-100.00, 300.00); //default latitude and longitutde
+
+        var myOptions = 
+        {
+            zoom: 14,
+            center: latlng,
+            mapTypeControl: true,
+            mapTypeControlOptions: {style: google.maps.MapTypeControlStyle.DROPDOWN_MENU},
+            navigationControlOptions:{style:google.maps.NavigationControlStyle.SMALL},
+            navigationControl: true,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+
+
+
+
+        if (geocoder) 
+        {
+            geocoder.geocode( { 'address': address}, function(results, status){
+                
+                
+                if (status == google.maps.GeocoderStatus.OK) 
+                {
+                    if (status != google.maps.GeocoderStatus.ZERO_RESULTS) 
+                    {
+                        
+                        map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+                        map_canvas.style.border = "1px solid black"; 
+                        map_canvas.style.height = '400px';
+                        map_canvas.style.width = '500px';
+                        
+                        map.setCenter(results[0].geometry.location);
+
+                        var marker = new google.maps.Marker({position:results[0].geometry.location,map:map});
+
+                        var infowindow = new google.maps.InfoWindow({ 
+                            content: '<p>Latitude, Longitude:' + marker.getPosition() + '</p>'
+
+                        });
+                      
+                        infowindow.open(map, marker);
+
+                        google.maps.event.addListener(marker, 'click', function() {
+                        infowindow.open(map, marker);
+                        });
+  
+                    } 
+                    else 
+                    {
+                        alert("No results found"); //error handling
+                    }
+                } 
+                else 
+                {
+                    alert("Geocode was not successful for the following reason: " + status); //error handling
+                }
+            });
+        }  
+    }
+                 
+</script>
+
+
+<body style="margin:0px; padding:0px;">    
+    
+    <form action="/getlocation/" method="GET" id="form">{% csrf_token %}
+        <div id="floating-panel" style="margin-left: 50px;">
+            <p>Enter a street address
+            <input style="width: 200px;" id="address" type="text" value="" name="input"></p>
+            <input id="submit" type="submit" value="Locate on map" onclick="callAjax()">
+        </div>
+    </form>  
+    
+    <br/>
+    <br/>
+    
+    <div id="map_canvas" style="width:100%; height:100%; margin-left: 50px;"></div>
+    <br/>
+    <br/>
+    
+</body>
+
+{% endblock %}
